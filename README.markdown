@@ -13,9 +13,11 @@
 1. [Usage](#usage)
   * [Karaf Features](#karaf-features)
   * [Install Method](#install-method)
+  * [RPM Repo](#rpm-repo)
   * [Ports](#ports)
   * [Log Verbosity](#log-verbosity)
   * [Enabling ODL OVSDB L3](#enabling-odl-ovsdb-l3)
+  * [Enabling ODL OVSDB HA](#enabling-odl-ovsdb-ha)
 1. [Reference ](#reference)
 1. [Limitations](#limitations)
 1. [Development](#development)
@@ -150,6 +152,34 @@ class { 'opendaylight':
 }
 ```
 
+### RPM Repo
+
+The `rpm_repo` param can be used to configure which RPM repository
+OpenDaylight is installed from.
+
+```puppet
+class { 'opendaylight':
+  rpm_repo => 'opendaylight-40-release',
+}
+```
+
+The naming convention follows the naming convention of the CentOS Community
+Build System, which is where upstream ODL hosts its RPMs. The
+`opendaylight-40-release` example above would install OpenDaylight Beryllium
+4.0.0 from the [nfv7-opendaylight-40-release][19] repo. Repo names ending in
+`-release` will always contain well-tested, officially released versions of
+OpenDaylight. Repos ending in `-testing` contain frequent, but unstable and
+unofficial, releases. The ODL version given in repo names shows which major
+and minor version it is pinned to. The `opendaylight-40-release` repo will
+always provide OpenDaylight Beryllium 4.0, whereas `opendaylight-4-release`
+will provide the latest release with major version 4 (which could include
+Service Releases, like SR2 4.2).
+
+For a full list of OpenDaylight releases and their CBS repos, see the
+[OpenDaylight Deployment wiki][20].
+
+This is only read when `install_method` is `rpm`.
+
 ### Ports
 
 To change the port on which OpenDaylight's northbound listens for REST API
@@ -180,6 +210,24 @@ To enable the ODL OVSDB L3, use the `enable_l3` flag. It's disabled by default.
 ```puppet
 class { 'opendaylight':
   enable_l3 => true,
+}
+```
+
+### Enable ODL OVSDB HA
+
+To enable ODL OVSDB HA, use the `enable_ha` flag. It's disabled by default.
+
+When `enable_ha` is set to true the `ha_node_ips` should be populated with the
+IP addresses that ODL will listen on for each node in the OVSDB HA cluster and
+`ha_node_index` should be set with the index of the IP address from
+`ha_node_ips` for the particular node that puppet is configuring as part of the
+HA cluster.
+
+```puppet
+class { 'opendaylight':
+  enable_ha     => true,
+  ha_node_ips   => ['10.10.10.1', '10.10.10.1', '10.10.10.3'],
+  ha_node_index => 0,
 }
 ```
 
@@ -304,7 +352,41 @@ Would would result in
 
 ```
 ovsdb.l3.fwd.enabled=yes
+ovsdb.l3.arp.responder.disabled=no
 ```
+
+##### `enable_ha`
+
+Enable or disable ODL OVSDB High Availablity.
+
+Default: `false`
+
+Valid options: The boolean values `true` and `false`.
+
+Requires: `ha_node_ips`, `ha_node_index`
+
+The ODL OVSDB Clustering and Jolokia XML for HA are configured and enabled.
+
+##### `ha_node_ips`
+
+Specifies the IPs that are part of the HA cluster enabled by `enable_ha`.
+
+Default: []
+
+Valid options: An array of IP addresses `['10.10.10.1', '10.10.10.1', '10.10.10.3']`.
+
+Required by: `enable_ha`
+
+##### `ha_node_index`
+
+Specifies the index of the IP for the node being configured from the array `ha_node_ips`.
+
+Default: ''
+
+Valid options: Index of a member of the array `ha_node_ips`: `0`.
+
+Required by: `enable_ha`, `ha_node_ips`
+
 
 ##### `tarball_url`
 
@@ -364,4 +446,6 @@ See our [git commit history][17] for contributor information.
 [15]: https://github.com/dfarrell07/puppet-opendaylight/blob/master/CHANGELOG
 [16]: https://github.com/dfarrell07/puppet-opendaylight/releases
 [17]: https://github.com/dfarrell07/puppet-opendaylight/commits/master
-[18]: http://cbs.centos.org/repos/nfv7-opendaylight-40-release/x86_64/os/Packages/
+[18]: http://cbs.centos.org/repos/nfv7-opendaylight-42-release/x86_64/os/Packages/
+[19]: http://cbs.centos.org/repos/nfv7-opendaylight-40-release/x86_64/os/Packages/ OpenDaylight Beryllium CentOS CBS repo
+[20]: https://wiki.opendaylight.org/view/Deployment#RPM OpenDaylight RPMs and their repos
